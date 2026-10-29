@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "targets": {
+    "ngocnhanvo/psevn-php": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "php"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/psevn-astro": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "node"
+          ]
+        },
+        "github": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "node"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/psevn-actions": {
+      "allow_deletions": false,
+      "allow_workflows": true,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "docs",
+            "none"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/escvn-php": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "php"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/escvn-astro": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "node"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/escvn-actions": {
+      "allow_deletions": false,
+      "allow_workflows": true,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "docs",
+            "none"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/knowledge": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "docs",
+            "none"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/knowledge-actions": {
+      "allow_deletions": false,
+      "allow_workflows": true,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "docs",
+            "none"
+          ]
+        }
+      }
+    }
+  }
+}
