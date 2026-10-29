@@ -15,6 +15,11 @@ cd "$TARGET_ROOT"
 git apply --check "$PATCH"
 git apply "$PATCH"
 
+# Make newly added files visible to git diff without staging their contents.
+# This keeps allowed_paths, workflow/symlink checks and git diff --check exact
+# for patches that create files; publish.sh still performs the real git add.
+git add -N -- .
+
 mapfile -t actual < <(git diff --name-only | sort)
 mapfile -t expected < <(jq -r '.allowed_paths[]' "$MANIFEST" | sort -u)
 [[ "${#actual[@]}" -gt 0 ]] || fail "Patch produced no diff"
