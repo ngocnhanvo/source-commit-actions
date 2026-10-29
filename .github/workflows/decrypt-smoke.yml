@@ -1,0 +1,34 @@
+name: Decrypt secret smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/decrypt-smoke.yml'
+      - 'tests/fixtures/decrypt-smoke.bundle.cms.b64'
+      - 'scripts/decrypt-request.sh'
+      - 'config/request-encryption-cert.pem'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  decrypt-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Decrypt harmless fixture
+        shell: bash
+        env:
+          SOURCE_COMMIT_DECRYPT_KEY: ${{ secrets.SOURCE_COMMIT_DECRYPT_KEY }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/decrypt-smoke"
+          bash scripts/decrypt-request.sh . tests/fixtures/decrypt-smoke.bundle.cms.b64 "$out"
+          grep -q '"fixture":"decrypt-smoke"' "$out/manifest.json"
+          grep -q '^diff --git a/sample.txt b/sample.txt$' "$out/changes.patch"
+          echo "SOURCE_COMMIT_DECRYPT_SECRET=PASS"
