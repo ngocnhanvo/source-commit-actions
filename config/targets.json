@@ -49,6 +49,7 @@
             "branch_pr"
           ],
           "validation_presets": [
+            "actions",
             "docs",
             "none"
           ]
@@ -94,6 +95,7 @@
             "branch_pr"
           ],
           "validation_presets": [
+            "actions",
             "docs",
             "none"
           ]
@@ -126,6 +128,7 @@
             "branch_pr"
           ],
           "validation_presets": [
+            "actions",
             "docs",
             "none"
           ]
