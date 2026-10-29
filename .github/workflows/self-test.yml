@@ -1,0 +1,37 @@
+name: Source commit self-test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'config/**'
+      - 'schema/**'
+      - 'templates/**'
+      - '.github/workflows/**'
+      - 'README.md'
+      - 'SECURITY.md'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'config/**'
+      - 'schema/**'
+      - 'templates/**'
+      - '.github/workflows/**'
+      - 'README.md'
+      - 'SECURITY.md'
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate control-plane scripts and contracts
+        shell: bash
+        run: bash scripts/self-test.sh
