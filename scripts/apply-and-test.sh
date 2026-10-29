@@ -27,10 +27,15 @@ if [[ "$ALLOW_DELETIONS" != "true" ]] && [[ -n "$(git diff --name-only --diff-fi
   fail "File deletions are not allowed for this target"
 fi
 
-if [[ "$ALLOW_WORKFLOWS" != "true" ]]; then
-  for p in "${actual[@]}"; do
-    [[ "$p" != .github/workflows/* ]] || fail "Workflow changes are not allowed for this target"
-  done
+workflow_changed=false
+for p in "${actual[@]}"; do
+  if [[ "$p" == .github/workflows/* ]]; then
+    workflow_changed=true
+    [[ "$ALLOW_WORKFLOWS" == "true" ]] || fail "Workflow changes are not allowed for this target"
+  fi
+done
+if [[ "$workflow_changed" == "true" && "$PRESET" != "actions" ]]; then
+  fail "Workflow changes require validation_preset=actions"
 fi
 
 if git diff --raw | grep -Eq '(^| )120000|(^| )160000'; then
@@ -73,6 +78,20 @@ case "$PRESET" in
     else
       fail "Supported lockfile not found"
     fi
+    ;;
+  actions)
+    command -v ruby >/dev/null || fail "ruby is unavailable for workflow YAML syntax checks"
+    for p in "${actual[@]}"; do
+      if [[ "$p" == *.sh || "$p" == *.bash ]]; then
+        bash -n "$p"
+      elif [[ "$p" == *.json ]]; then
+        jq -e . "$p" >/dev/null
+      elif [[ "$p" == .github/workflows/*.yml || "$p" == .github/workflows/*.yaml ]]; then
+        ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0), aliases: true)' "$p" >/dev/null
+      elif [[ "$p" == *.py ]]; then
+        python3 -m py_compile "$p"
+      fi
+    done
     ;;
   docs|none) ;;
   *) fail "Unknown preset: $PRESET" ;;
