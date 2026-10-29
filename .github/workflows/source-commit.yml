@@ -51,11 +51,38 @@ jobs:
           fi
           [[ "$dir" =~ ^requests/[A-Za-z0-9._-]+$ ]] || { echo "::error::Invalid request directory"; exit 1; }
           echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          echo "request_id=$(basename "$dir")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate encrypted request envelope
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready="control/${{ steps.request.outputs.dir }}/request.ready"
+          envelope="control/${{ steps.request.outputs.dir }}/request.bundle.cms.b64"
+          [[ -f "$ready" && "$(tr -d '\r\n' < "$ready")" == "READY" ]] || {
+            echo "::error::request.ready must contain READY"
+            exit 1
+          }
+          [[ -s "$envelope" ]] || {
+            echo "::error::request.bundle.cms.b64 is missing"
+            exit 1
+          }
+
+      - name: Decrypt request bundle
+        id: decrypt
+        shell: bash
+        env:
+          SOURCE_COMMIT_DECRYPT_KEY: ${{ secrets.SOURCE_COMMIT_DECRYPT_KEY }}
+        run: |
+          set -euo pipefail
+          request_root="$RUNNER_TEMP/source-request"
+          bash control/scripts/decrypt-request.sh             control             "control/${{ steps.request.outputs.dir }}/request.bundle.cms.b64"             "$request_root"
+          echo "request_root=$request_root" >> "$GITHUB_OUTPUT"
 
       - name: Validate request and allowlist
         id: validate
         shell: bash
-        run: bash control/scripts/validate-request.sh control "${{ steps.request.outputs.dir }}"
+        run: bash control/scripts/validate-request.sh control "${{ steps.decrypt.outputs.request_root }}" "${{ steps.request.outputs.request_id }}"
 
       - name: Checkout target repository
         uses: actions/checkout@v4
@@ -81,7 +108,7 @@ jobs:
       - name: Apply patch and run fixed validation
         shell: bash
         run: |
-          bash control/scripts/apply-and-test.sh             target             "control/${{ steps.request.outputs.dir }}/manifest.json"             "control/${{ steps.request.outputs.dir }}/changes.patch"             "${{ steps.validate.outputs.validation_preset }}"             "${{ steps.validate.outputs.allow_deletions }}"             "${{ steps.validate.outputs.allow_workflows }}"
+          bash control/scripts/apply-and-test.sh             target             "${{ steps.decrypt.outputs.request_root }}/manifest.json"             "${{ steps.decrypt.outputs.request_root }}/changes.patch"             "${{ steps.validate.outputs.validation_preset }}"             "${{ steps.validate.outputs.allow_deletions }}"             "${{ steps.validate.outputs.allow_workflows }}"
 
       - name: Commit and publish
         id: publish
