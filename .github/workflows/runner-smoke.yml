@@ -1,0 +1,19 @@
+name: Runner smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/runner-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Runner starts
+        shell: bash
+        run: echo "SOURCE_COMMIT_RUNNER_SMOKE=PASS"
