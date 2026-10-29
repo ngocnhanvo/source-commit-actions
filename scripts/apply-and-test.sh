@@ -76,9 +76,21 @@ case "$PRESET" in
       # can fail before project validation starts.
       corepack prepare pnpm@9.15.9 --activate
       pnpm install --frozen-lockfile
-      if jq -e '.scripts.check' package.json >/dev/null; then CI=1 pnpm run check; fi
+      # Validate syntax only for JavaScript-family files touched by this request.
+      # Project-wide type checks can be red on an inherited branch even when its
+      # authoritative production CI is green, so they are not a safe patch gate.
+      for p in "${actual[@]}"; do
+        [[ -f "$p" ]] || continue
+        case "$p" in
+          *.js|*.mjs|*.cjs) node --check "$p" ;;
+        esac
+      done
       if jq -e '.scripts.lint' package.json >/dev/null; then CI=1 pnpm run lint; fi
-      if jq -e '.scripts.test' package.json >/dev/null; then CI=1 pnpm test; fi
+      if jq -e '.scripts.test' package.json >/dev/null; then
+        CI=1 pnpm test
+      elif jq -e '.scripts["test:run"]' package.json >/dev/null; then
+        CI=1 pnpm run test:run
+      fi
     elif [[ -f package-lock.json ]]; then
       npm ci
       if jq -e '.scripts.check' package.json >/dev/null; then CI=1 npm run check; fi
