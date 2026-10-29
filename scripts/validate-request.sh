@@ -2,17 +2,16 @@
 set -euo pipefail
 
 CONTROL_ROOT="${1:?control root required}"
-REQUEST_DIR="${2:?request dir required}"
-MANIFEST="$CONTROL_ROOT/$REQUEST_DIR/manifest.json"
-PATCH="$CONTROL_ROOT/$REQUEST_DIR/changes.patch"
-READY="$CONTROL_ROOT/$REQUEST_DIR/request.ready"
+REQUEST_ROOT="${2:?decrypted request root required}"
+REQUEST_ID="${3:?request id required}"
+MANIFEST="$REQUEST_ROOT/manifest.json"
+PATCH="$REQUEST_ROOT/changes.patch"
 TARGETS="$CONTROL_ROOT/config/targets.json"
 
 fail(){ echo "::error::$*" >&2; exit 1; }
 
-[[ "$REQUEST_DIR" =~ ^requests/[A-Za-z0-9._-]+$ ]] || fail "Invalid request directory"
-[[ -f "$MANIFEST" && -f "$PATCH" && -f "$READY" ]] || fail "Request must contain manifest.json, changes.patch and request.ready"
-[[ "$(tr -d '\r\n' < "$READY")" == "READY" ]] || fail "request.ready must contain READY"
+[[ "$REQUEST_ID" =~ ^[A-Za-z0-9._-]+$ ]] || fail "Invalid request id"
+[[ -f "$MANIFEST" && -f "$PATCH" ]] || fail "Decrypted request must contain manifest.json and changes.patch"
 [[ -s "$PATCH" ]] || fail "Patch is empty"
 grep -Eq '^(GIT binary patch|Binary files )' "$PATCH" && fail "Binary patches are not allowed"
 
@@ -44,7 +43,7 @@ jq -e --arg r "$target_repo" --arg b "$target_branch" --arg p "$preset" '.target
 
 allow_deletions="$(jq -r --arg r "$target_repo" '.targets[$r].allow_deletions // false' "$TARGETS")"
 allow_workflows="$(jq -r --arg r "$target_repo" '.targets[$r].allow_workflows // false' "$TARGETS")"
-request_id="$(basename "$REQUEST_DIR")"
+request_id="$REQUEST_ID"
 branch_name="source-commit/$request_id"
 
 {
