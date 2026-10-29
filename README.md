@@ -10,12 +10,13 @@ Each request is an immutable directory:
 
 ```text
 requests/<request-id>/
-├── manifest.json
-├── changes.patch
-└── request.ready   # create this LAST
+├── request.bundle.cms.b64  # encrypted manifest.json + changes.patch
+└── request.ready           # create this LAST
 ```
 
-Only creation/change of `request.ready` triggers the workflow. This prevents a run from starting before the manifest and patch are complete.
+The public control repository never stores plaintext private-source patches or target file paths from a real request. The bundle is encrypted locally with the committed public certificate; only the runner can decrypt it using `SOURCE_COMMIT_DECRYPT_KEY`.
+
+Only creation/change of `request.ready` triggers the workflow. This prevents a run from starting before the encrypted bundle is complete.
 
 The runner then:
 
@@ -37,6 +38,7 @@ Before the bot can execute, GitHub Actions must be enabled for this private repo
 Create one repository Actions secret:
 
 - `SOURCE_REPO_PAT` — a token/GitHub App token with only the repository permissions needed to read/write target repos and create PRs when requested.
+- `SOURCE_COMMIT_DECRYPT_KEY` — the private PEM key matching `config/request-encryption-cert.pem`. It is used only in the request-decryption step and must never be committed.
 
 Do **not** store PAT values in request files, patches, logs, or config.
 
@@ -82,8 +84,8 @@ The workflow also supports `workflow_dispatch` with a request directory such as:
 requests/20261029-example
 ```
 
-The directory must already contain `manifest.json`, `changes.patch`, and `request.ready`.
+The directory must already contain `request.bundle.cms.b64` and `request.ready`.
 
 ## Audit model
 
-Request directories are retained in Git history. Do not rewrite or delete old requests just to rerun them; create a new request ID with a fresh `base_sha`.
+Request directories are retained in Git history only as ciphertext plus the READY marker. Do not rewrite or delete old requests just to rerun them; create a new request ID with a fresh `base_sha`.
