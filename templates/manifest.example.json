@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "target_repo": "ngocnhanvo/psevn-php",
+  "target_branch": "master",
+  "base_sha": "0123456789abcdef0123456789abcdef01234567",
+  "mode": "direct_commit",
+  "commit_message": "fix(example): describe the change",
+  "validation_preset": "php",
+  "allowed_paths": [
+    "wp-content/mu-plugins/example.php"
+  ],
+  "test_files": [
+    "wp-content/mu-plugins/tests/example.php"
+  ]
+}
