@@ -43,7 +43,7 @@ diff --git a/sample.txt b/sample.txt
 PATCH
 printf 'READY\n' > "$tmp/control/requests/self-test/request.ready"
 
-GITHUB_OUTPUT="$tmp/output" bash scripts/validate-request.sh "$tmp/control" "requests/self-test"
+GITHUB_OUTPUT="$tmp/output" bash scripts/validate-request.sh "$tmp/control" "$tmp/control/requests/self-test" "self-test"
 grep -q '^target_repo=ngocnhanvo/psevn-php$' "$tmp/output"
 grep -q '^mode=direct_commit$' "$tmp/output"
 
