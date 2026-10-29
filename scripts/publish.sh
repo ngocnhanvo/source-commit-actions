@@ -39,7 +39,7 @@ else
 
 Request branch: \`$BRANCH_NAME\`
 Commit: \`$new_sha\`"
-  pr_json="$(gh api --method POST \"repos/$TARGET_REPO/pulls\" \
+  pr_json="$(gh api --method POST "repos/$TARGET_REPO/pulls" \
     -f title="$COMMIT_MESSAGE" \
     -f head="$BRANCH_NAME" \
     -f base="$TARGET_BRANCH" \
