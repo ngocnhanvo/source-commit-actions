@@ -46,6 +46,7 @@
       "enum": [
         "php",
         "node",
+        "actions",
         "docs",
         "none"
       ]
