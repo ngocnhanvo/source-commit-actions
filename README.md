@@ -28,6 +28,10 @@ The runner then:
 7. commits and pushes only after validation succeeds;
 8. verifies the remote SHA. In `branch_pr` mode it also creates a PR.
 
+## Repository prerequisites
+
+Before the bot can execute, GitHub Actions must be enabled for this private repository and a GitHub-hosted or self-hosted runner must be available. A runner-smoke workflow is included to diagnose this independently of secrets.
+
 ## Required secret
 
 Create one repository Actions secret:
@@ -47,6 +51,7 @@ The request chooses a mode only from modes allowed for that repo+branch in `conf
 
 - `php`: `php -l` for every changed PHP file, plus optional manifest `test_files` executed with PHP.
 - `node`: installs dependencies from the detected lockfile, then runs existing `check`, `lint`, and `test` package scripts in CI mode.
+- `actions`: required whenever an allowlisted target changes `.github/workflows/**`; parses workflow YAML and syntax-checks changed shell/Python/JSON files.
 - `docs`: diff/path validation only; intended for documentation repositories.
 - `none`: no language-specific test, but all structural/diff safety checks still run.
 
