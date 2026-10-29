@@ -71,6 +71,10 @@ case "$PRESET" in
     [[ -f package.json ]] || fail "package.json not found"
     if [[ -f pnpm-lock.yaml ]]; then
       corepack enable
+      # Current allowlisted Astro production repos use the same pnpm version as
+      # their release CI. Avoid Corepack floating to a newer pnpm policy that
+      # can fail before project validation starts.
+      corepack prepare pnpm@9.15.9 --activate
       pnpm install --frozen-lockfile
       if jq -e '.scripts.check' package.json >/dev/null; then CI=1 pnpm run check; fi
       if jq -e '.scripts.lint' package.json >/dev/null; then CI=1 pnpm run lint; fi
