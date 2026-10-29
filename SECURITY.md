@@ -11,3 +11,7 @@ This repository is a privileged source-control automation plane.
 - The token is exposed only to the final publish step.
 - Use non-force pushes. A moved target branch must fail rather than overwrite newer work.
 - Review any proposal to enable workflow changes or deletions for a target repository.
+
+## Public control repository
+
+Because this repository may be public, real request manifests and patches for private target repositories must never be committed in plaintext. Use only `request.bundle.cms.b64`, encrypted for `config/request-encryption-cert.pem`. The matching private key belongs only in the `SOURCE_COMMIT_DECRYPT_KEY` Actions secret.
