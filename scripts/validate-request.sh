@@ -38,9 +38,7 @@ done < <(jq -r '.allowed_paths[]' "$MANIFEST")
 
 entry="$(jq -c --arg r "$target_repo" --arg b "$target_branch" '.targets[$r].branches[$b] // empty' "$TARGETS")"
 [[ -n "$entry" ]] || fail "Target repo/branch is not allowlisted"
-jq -e --arg r "$target_repo" --arg m "$mode" '.targets[$r].branches[$ENV.TARGET_BRANCH].modes // empty | index($m) != null'   --argjson dummy 0 "$TARGETS" >/dev/null 2>&1 || {
-    jq -e --arg r "$target_repo" --arg b "$target_branch" --arg m "$mode" '.targets[$r].branches[$b].modes | index($m) != null' "$TARGETS" >/dev/null || fail "Mode not allowed"
-  }
+jq -e --arg r "$target_repo" --arg b "$target_branch" --arg m "$mode" '.targets[$r].branches[$b].modes | index($m) != null' "$TARGETS" >/dev/null || fail "Mode not allowed"
 jq -e --arg r "$target_repo" --arg b "$target_branch" --arg p "$preset" '.targets[$r].branches[$b].validation_presets | index($p) != null' "$TARGETS" >/dev/null || fail "Validation preset not allowed"
 
 allow_deletions="$(jq -r --arg r "$target_repo" '.targets[$r].allow_deletions // false' "$TARGETS")"
