@@ -1,0 +1,104 @@
+name: Central source commit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'requests/**/request.ready'
+  workflow_dispatch:
+    inputs:
+      request_dir:
+        description: 'Existing request directory, e.g. requests/20261029-example'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-commit-global
+  cancel-in-progress: false
+
+jobs:
+  source-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout control repository
+        uses: actions/checkout@v4
+        with:
+          path: control
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Resolve request directory
+        id: request
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            dir="${{ inputs.request_dir }}"
+          else
+            before="${{ github.event.before }}"
+            after="${{ github.sha }}"
+            mapfile -t markers < <(git -C control diff --name-only "$before" "$after" -- ':(glob)requests/**/request.ready')
+            if [[ "${#markers[@]}" -ne 1 ]]; then
+              echo "::error::Expected exactly one new/changed request.ready marker, found ${#markers[@]}"
+              exit 1
+            fi
+            dir="$(dirname "${markers[0]}")"
+          fi
+          [[ "$dir" =~ ^requests/[A-Za-z0-9._-]+$ ]] || { echo "::error::Invalid request directory"; exit 1; }
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Validate request and allowlist
+        id: validate
+        shell: bash
+        run: bash control/scripts/validate-request.sh control "${{ steps.request.outputs.dir }}"
+
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.validate.outputs.target_repo }}
+          ref: ${{ steps.validate.outputs.target_branch }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact target HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git -C target rev-parse HEAD)"
+          expected="${{ steps.validate.outputs.base_sha }}"
+          [[ "$actual" == "$expected" ]] || {
+            echo "::error::Target HEAD moved. expected=$expected actual=$actual"
+            exit 1
+          }
+
+      - name: Apply patch and run fixed validation
+        shell: bash
+        run: |
+          bash control/scripts/apply-and-test.sh             target             "control/${{ steps.request.outputs.dir }}/manifest.json"             "control/${{ steps.request.outputs.dir }}/changes.patch"             "${{ steps.validate.outputs.validation_preset }}"             "${{ steps.validate.outputs.allow_deletions }}"             "${{ steps.validate.outputs.allow_workflows }}"
+
+      - name: Commit and publish
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_REPO_PAT }}
+        run: |
+          bash control/scripts/publish.sh             target             "${{ steps.validate.outputs.target_repo }}"             "${{ steps.validate.outputs.target_branch }}"             "${{ steps.validate.outputs.mode }}"             "${{ steps.validate.outputs.branch_name }}"             "${{ steps.validate.outputs.commit_message }}"
+
+      - name: Summary
+        shell: bash
+        run: |
+          {
+            echo "## Source commit result"
+            echo
+            echo "- Target: \`${{ steps.validate.outputs.target_repo }}@${{ steps.validate.outputs.target_branch }}\`"
+            echo "- Mode: \`${{ steps.validate.outputs.mode }}\`"
+            echo "- Commit: \`${{ steps.publish.outputs.new_sha }}\`"
+            echo "- Result: ${{ steps.publish.outputs.result_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
