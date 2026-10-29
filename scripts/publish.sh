@@ -35,7 +35,17 @@ else
   git push origin "HEAD:$BRANCH_NAME"
   remote_sha="$(git ls-remote origin "refs/heads/$BRANCH_NAME" | awk '{print $1}')"
   [[ "$remote_sha" == "$new_sha" ]] || fail "Remote branch SHA verification failed"
-  pr_url="$(gh pr create --repo "$TARGET_REPO" --base "$TARGET_BRANCH" --head "$BRANCH_NAME" --title "$COMMIT_MESSAGE" --body "Automated source commit request.\n\nRequest branch: \`$BRANCH_NAME\`\nCommit: \`$new_sha\`")"
+  pr_body="Automated source commit request.
+
+Request branch: \`$BRANCH_NAME\`
+Commit: \`$new_sha\`"
+  pr_json="$(gh api --method POST \"repos/$TARGET_REPO/pulls\" \
+    -f title="$COMMIT_MESSAGE" \
+    -f head="$BRANCH_NAME" \
+    -f base="$TARGET_BRANCH" \
+    -f body="$pr_body")"
+  pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // empty')"
+  [[ "$pr_url" == https://github.com/* ]] || fail "Pull request creation returned no GitHub URL"
   echo "new_sha=$new_sha" >> "$GITHUB_OUTPUT"
   echo "result_url=$pr_url" >> "$GITHUB_OUTPUT"
 fi
