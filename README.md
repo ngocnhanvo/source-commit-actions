@@ -37,7 +37,7 @@ Before the bot can execute, GitHub Actions must be enabled for this private repo
 
 Create one repository Actions secret:
 
-- `SOURCE_REPO_PAT` — a token/GitHub App token with only the repository permissions needed to read/write target repos and create PRs when requested.
+- `SOURCE_REPO_PAT` — a token/GitHub App token scoped to the allowlisted target repositories. `direct_commit` needs repository **Contents: read/write**. `branch_pr` additionally needs **Pull requests: read/write**; Contents-only permission can push the source branch but cannot create the required PR.
 - `SOURCE_COMMIT_DECRYPT_KEY` — the private PEM key matching `config/request-encryption-cert.pem`. It is used only in the request-decryption step and must never be committed.
 
 Do **not** store PAT values in request files, patches, logs, or config.
