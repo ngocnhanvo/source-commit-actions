@@ -62,14 +62,14 @@ case "$PRESET" in
     if [[ -f pnpm-lock.yaml ]]; then
       corepack enable
       pnpm install --frozen-lockfile
-      jq -e '.scripts.check' package.json >/dev/null && CI=1 pnpm run check || true
-      jq -e '.scripts.lint' package.json >/dev/null && CI=1 pnpm run lint || true
-      jq -e '.scripts.test' package.json >/dev/null && CI=1 pnpm test || true
+      if jq -e '.scripts.check' package.json >/dev/null; then CI=1 pnpm run check; fi
+      if jq -e '.scripts.lint' package.json >/dev/null; then CI=1 pnpm run lint; fi
+      if jq -e '.scripts.test' package.json >/dev/null; then CI=1 pnpm test; fi
     elif [[ -f package-lock.json ]]; then
       npm ci
-      jq -e '.scripts.check' package.json >/dev/null && CI=1 npm run check || true
-      jq -e '.scripts.lint' package.json >/dev/null && CI=1 npm run lint || true
-      jq -e '.scripts.test' package.json >/dev/null && CI=1 npm test || true
+      if jq -e '.scripts.check' package.json >/dev/null; then CI=1 npm run check; fi
+      if jq -e '.scripts.lint' package.json >/dev/null; then CI=1 npm run lint; fi
+      if jq -e '.scripts.test' package.json >/dev/null; then CI=1 npm test; fi
     else
       fail "Supported lockfile not found"
     fi
