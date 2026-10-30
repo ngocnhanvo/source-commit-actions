@@ -110,7 +110,7 @@ case "$PRESET" in
       elif [[ "$p" == .github/workflows/*.yml || "$p" == .github/workflows/*.yaml ]]; then
         ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0), aliases: true)' "$p" >/dev/null
       elif [[ "$p" == *.py ]]; then
-        python3 -m py_compile "$p"
+        python3 -c 'import ast,sys,tokenize; ast.parse(tokenize.open(sys.argv[1]).read(), filename=sys.argv[1])' "$p"
       fi
     done
     ;;
