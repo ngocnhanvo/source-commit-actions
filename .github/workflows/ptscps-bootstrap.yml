@@ -18,21 +18,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - project: astro
-            source_repo: ngocnhanvo/template-astro
-            source_branch: master
-            target_repo: ngocnhanvo/ptscps-astro
-            target_branch: master
           - project: php
             source_repo: ngocnhanvo/template-php
             source_branch: master
             target_repo: ngocnhanvo/ptscps-php
             target_branch: master
-          - project: actions
-            source_repo: ngocnhanvo/template-actions
-            source_branch: main
-            target_repo: ngocnhanvo/ptscps-actions
-            target_branch: main
     env:
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
       PROJECT: ${{ matrix.project }}
