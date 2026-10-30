@@ -189,6 +189,61 @@
           ]
         }
       }
+    },
+    "ngocnhanvo/ptscps-php": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "php"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/ptscps-astro": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "master": {
+          "modes": [
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "node"
+          ]
+        },
+        "github": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "node"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/ptscps-actions": {
+      "allow_deletions": false,
+      "allow_workflows": true,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "actions",
+            "docs",
+            "none"
+          ]
+        }
+      }
     }
   }
 }
