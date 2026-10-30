@@ -55,8 +55,8 @@ elif args.project=="php":
     s=s.replace("for PSE Astro","for PTSCPS Astro")
     s=s.replace("# PSE: cấu hình robots","# PTSCPS: cấu hình robots")
     a="        'llms' => "
-    assert s.count(a)==1
-    begin=s.index(a);end=s.index("\n    ];",begin)
+    defaults=s.index("function esc_seo_files_defaults(): array")
+    begin=s.index(a,defaults);end=s.index("\n    ];",begin)
     replacement=(
         '        \'llms\' => "# PTSCPS\\n\\n"\n'
         '            . "> Thông tin chính thức của PTSCPS.\\n\\n"\n'
