@@ -92,8 +92,9 @@ elif args.project=="actions":
             f.rename(f.with_name("ptscps-"+f.name[len("template-"):]))
     for n in ["ptscps-production-deploy.yml","ptscps-php-release.yml","ptscps-shared-playwright.yml"]:
         assert (dst/".github/workflows"/n).is_file(),n
+    import ast
     for f in (dst/"scripts").glob("*.py"):
-        subprocess.run(["python3","-m","py_compile",str(f)],check=True)
+        ast.parse(f.read_text(encoding="utf-8"), filename=str(f))
     assert "ngocnhanvo/ptscps-actions" in (dst/".github/workflows/ptscps-production-deploy.yml").read_text()
 else:
     raise AssertionError("Unknown project")
