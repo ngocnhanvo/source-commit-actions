@@ -211,6 +211,7 @@
       "branches": {
         "master": {
           "modes": [
+            "direct_commit",
             "branch_pr"
           ],
           "validation_presets": [
