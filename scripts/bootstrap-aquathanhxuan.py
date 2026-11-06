@@ -161,6 +161,7 @@ elif args.project == "php":
     f = dst / "README.md"
     s = replace_repo_names(f.read_text(encoding="utf-8"))
     s = s.replace("# Template PHP", "# Aqua Thanh Xuân PHP")
+    s = s.replace("'template-actions'", "'aquathanhxuan-actions'")
     s = s.replace("template-unzip", "aquathanhxuan-unzip")
     s = s.replace("template-image-delta", "aquathanhxuan-image-delta")
     s = s.replace("template-static-delta", "aquathanhxuan-static-delta")
