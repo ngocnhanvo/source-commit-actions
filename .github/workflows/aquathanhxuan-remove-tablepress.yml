@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(cat control/bootstrap/aquathanhxuan-remove-tablepress.ready)" = "AQUATHANHXUAN_REMOVE_TABLEPRESS_V2"
+          test "$(cat control/bootstrap/aquathanhxuan-remove-tablepress.ready)" = "AQUATHANHXUAN_REMOVE_TABLEPRESS_V3"
           test -n "$SOURCE_REPO_PAT"
           python3 - <<'PY'
           import json
@@ -103,8 +103,37 @@ jobs:
           diff -u /tmp/expected-tablepress /tmp/found-tablepress
           xargs -r git rm -- < /tmp/expected-tablepress
           test -z "$(git ls-files 'src/astro/tablepress/*')"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('src/lib/wordpress/builderPreviewControls.test.ts')
+          source=path.read_text(encoding='utf-8')
+          obsolete='''  it.each([
+    ["Home_00.astro","data-slider-prev"],["Home_00.astro","data-slider-next"],
+    ["Home_13.astro","data-customer-prev"],["Home_13.astro","data-customer-next"],
+  ])("preserves existing native slider controls from %s %s", (file,selector)=>{
+    const component=readFileSync(resolve(process.cwd(),"src/astro/tablepress",file),"utf8");
+    const button=(component.match(/<button\\b[\\s\\S]*?>/g)||[]).find(tag=>tag.includes(selector));
+    expect(button).toBeDefined();
+    expect(button).toContain('data-esc-builder-preview-action={Astro.locals.escBuilderPreview ? "yes" : undefined}');
+    const markup=button!.replace(/data-esc-builder-preview-action=\\{[^}]+\\}/,'data-esc-builder-preview-action')
+      .replace(/<button\\b/,'<button id="target"')+"Next</button>";
+    expect(safe(markup)).toBe(true);
+    expect(safe(markup,true)).toBe(false);
+  });
+'''
+          if source.count(obsolete) != 1:
+              raise SystemExit('Expected exactly one obsolete tablepress component test block')
+          path.write_text(source.replace(obsolete,''),encoding='utf-8')
+          PY
+          git add src/lib/wordpress/builderPreviewControls.test.ts
+
+          {
+            cat /tmp/expected-tablepress
+            echo src/lib/wordpress/builderPreviewControls.test.ts
+          } | sort > /tmp/expected-changed
           git diff --cached --name-only | sort > /tmp/staged
-          diff -u /tmp/expected-tablepress /tmp/staged
+          diff -u /tmp/expected-changed /tmp/staged
           git diff --cached --check
 
       - name: Validate deletion introduces no new Astro type errors and tests pass
@@ -141,7 +170,7 @@ jobs:
           cd target
           git config user.name "source-commit-actions[bot]"
           git config user.email "source-commit-actions[bot]@users.noreply.github.com"
-          git commit -q -m "chore(tablepress): remove inherited Astro components"
+          git commit -q -m "chore(tablepress): remove inherited Astro components and stale tests"
           export GIT_CONFIG_COUNT=1
           export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$SOURCE_REPO_PAT" | base64 -w0)"
