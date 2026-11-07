@@ -1,0 +1,156 @@
+name: Aqua Thanh Xuan fix RelatedProducts retired locale import (one-time)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bootstrap/aquathanhxuan-related-products-locale.ready
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-commit-aquathanhxuan-related-products-locale
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    if: github.repository == 'ngocnhanvo/source-commit-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+      EXPECTED_BASE_SHA: f4d210ccfb44e7ff248cb7be84c073297f50ca50
+    steps:
+      - name: Checkout audited control-plane
+        uses: actions/checkout@v4
+        with:
+          path: control
+          persist-credentials: false
+
+      - name: Verify authorization and target allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat control/bootstrap/aquathanhxuan-related-products-locale.ready)" = "AQUATHANHXUAN_RELATED_PRODUCTS_LOCALE_V1"
+          test -n "$SOURCE_REPO_PAT"
+          python3 - <<'PY'
+          import json
+          cfg=json.load(open('control/config/targets.json',encoding='utf-8'))
+          target=cfg['targets']['ngocnhanvo/aquathanhxuan-astro']
+          branch=target['branches']['master']
+          assert 'direct_commit' in branch.get('modes',[])
+          assert 'node' in branch.get('validation_presets',[])
+          print('AQUATHANHXUAN_TARGET_ALLOWLIST=PASS')
+          PY
+
+      - name: Checkout exact Aqua Thanh Xuan Astro master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/aquathanhxuan-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: target
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Install dependencies and capture inherited Astro check baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd target
+          test "$(git rev-parse HEAD)" = "$EXPECTED_BASE_SHA"
+          corepack enable
+          corepack prepare pnpm@9.15.9 --activate
+          pnpm install --frozen-lockfile
+          set +e
+          pnpm run check > /tmp/check-before.log 2>&1
+          status=$?
+          set -e
+          echo "BASELINE_CHECK_STATUS=$status"
+          python3 - <<'PY'
+          import re
+          raw=open('/tmp/check-before.log',encoding='utf-8',errors='replace').read()
+          raw=re.sub(r'\x1b\[[0-9;]*m','',raw)
+          errors=sorted(line.strip() for line in raw.splitlines() if ' - error ' in line)
+          open('/tmp/errors-before.txt','w',encoding='utf-8').write('\n'.join(errors)+'\n')
+          print('BASELINE_TYPE_ERRORS='+str(len(errors)))
+          print('BASELINE_HAS_RETIRED_IMPORT='+str('footersection.json' in raw))
+          PY
+
+      - name: Replace retired footersection locale dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd target
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          product=json.loads(Path('src/data/i18n/product.json').read_text(encoding='utf-8'))
+          value=product.get('contact_price')
+          if not isinstance(value,dict) or not value.get('vi') or not value.get('en'):
+              raise SystemExit('product.json contact_price locale is missing')
+          path=Path('src/astroutils/RelatedProducts.astro')
+          source=path.read_text(encoding='utf-8')
+          old_import="import quoteLang from '@/data/i18n/footersection.json';\n"
+          old_usage="{quoteLang.submit?.[language] || 'Yêu cầu báo giá'}"
+          new_usage="{mtlang.contact_price?.[language as keyof typeof mtlang.contact_price] || 'Yêu cầu báo giá'}"
+          if source.count(old_import) != 1:
+              raise SystemExit('Expected exactly one retired footersection import')
+          if source.count(old_usage) != 1:
+              raise SystemExit('Expected exactly one quoteLang.submit usage')
+          source=source.replace(old_import,'').replace(old_usage,new_usage)
+          path.write_text(source,encoding='utf-8')
+          PY
+          git add src/astroutils/RelatedProducts.astro
+          test "$(git diff --cached --name-only)" = "src/astroutils/RelatedProducts.astro"
+          ! grep -R "footersection.json" -n src
+          grep -F "mtlang.contact_price" src/astroutils/RelatedProducts.astro
+          git diff --cached --check
+
+      - name: Validate no new Astro errors and all tests pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd target
+          set +e
+          pnpm run check > /tmp/check-after.log 2>&1
+          status=$?
+          set -e
+          echo "AFTER_CHECK_STATUS=$status"
+          python3 - <<'PY'
+          import re
+          before=set(open('/tmp/errors-before.txt',encoding='utf-8').read().splitlines())
+          raw=open('/tmp/check-after.log',encoding='utf-8',errors='replace').read()
+          raw=re.sub(r'\x1b\[[0-9;]*m','',raw)
+          after=set(line.strip() for line in raw.splitlines() if ' - error ' in line)
+          new=sorted(after-before)
+          print('AFTER_TYPE_ERRORS='+str(len(after)))
+          if 'footersection.json' in raw:
+              raise SystemExit('Retired footersection import still appears after patch')
+          if new:
+              print('NEW_TYPE_ERRORS:')
+              print('\n'.join(new))
+              raise SystemExit('Patch introduced new Astro errors')
+          print('TYPE_ERROR_PARITY=PASS')
+          PY
+          pnpm run test:run
+
+      - name: Commit and publish exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          cd target
+          git config user.name "source-commit-actions[bot]"
+          git config user.email "source-commit-actions[bot]@users.noreply.github.com"
+          git commit -q -m "fix(products): remove retired quote locale import"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$SOURCE_REPO_PAT" | base64 -w0)"
+          git push origin HEAD:refs/heads/master
+          expected="$(git rev-parse HEAD)"
+          actual="$(git ls-remote --heads origin refs/heads/master | cut -f1)"
+          test -n "$actual" && test "$actual" = "$expected"
+          echo "AQUATHANHXUAN_RELATED_PRODUCTS_FIX_SHA=$actual" >> "$GITHUB_STEP_SUMMARY"
+          echo "AQUATHANHXUAN_RELATED_PRODUCTS_FIX_PASS $actual"
