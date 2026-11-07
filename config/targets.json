@@ -248,7 +248,7 @@
       }
     },
     "ngocnhanvo/aquathanhxuan-astro": {
-      "allow_deletions": false,
+      "allow_deletions": true,
       "allow_workflows": false,
       "branches": {
         "master": {
