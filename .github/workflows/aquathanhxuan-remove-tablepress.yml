@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(cat control/bootstrap/aquathanhxuan-remove-tablepress.ready)" = "AQUATHANHXUAN_REMOVE_TABLEPRESS_V3"
+          test "$(cat control/bootstrap/aquathanhxuan-remove-tablepress.ready)" = "AQUATHANHXUAN_REMOVE_TABLEPRESS_V4"
           test -n "$SOURCE_REPO_PAT"
           python3 - <<'PY'
           import json
@@ -105,23 +105,11 @@ jobs:
           test -z "$(git ls-files 'src/astro/tablepress/*')"
 
           python3 - <<'PY'
+          import base64
           from pathlib import Path
           path=Path('src/lib/wordpress/builderPreviewControls.test.ts')
           source=path.read_text(encoding='utf-8')
-          obsolete='''  it.each([
-    ["Home_00.astro","data-slider-prev"],["Home_00.astro","data-slider-next"],
-    ["Home_13.astro","data-customer-prev"],["Home_13.astro","data-customer-next"],
-  ])("preserves existing native slider controls from %s %s", (file,selector)=>{
-    const component=readFileSync(resolve(process.cwd(),"src/astro/tablepress",file),"utf8");
-    const button=(component.match(/<button\\b[\\s\\S]*?>/g)||[]).find(tag=>tag.includes(selector));
-    expect(button).toBeDefined();
-    expect(button).toContain('data-esc-builder-preview-action={Astro.locals.escBuilderPreview ? "yes" : undefined}');
-    const markup=button!.replace(/data-esc-builder-preview-action=\\{[^}]+\\}/,'data-esc-builder-preview-action')
-      .replace(/<button\\b/,'<button id="target"')+"Next</button>";
-    expect(safe(markup)).toBe(true);
-    expect(safe(markup,true)).toBe(false);
-  });
-'''
+          obsolete=base64.b64decode('ICBpdC5lYWNoKFsKICAgIFsiSG9tZV8wMC5hc3RybyIsImRhdGEtc2xpZGVyLXByZXYiXSxbIkhvbWVfMDAuYXN0cm8iLCJkYXRhLXNsaWRlci1uZXh0Il0sCiAgICBbIkhvbWVfMTMuYXN0cm8iLCJkYXRhLWN1c3RvbWVyLXByZXYiXSxbIkhvbWVfMTMuYXN0cm8iLCJkYXRhLWN1c3RvbWVyLW5leHQiXSwKICBdKSgicHJlc2VydmVzIGV4aXN0aW5nIG5hdGl2ZSBzbGlkZXIgY29udHJvbHMgZnJvbSAlcyAlcyIsIChmaWxlLHNlbGVjdG9yKT0+ewogICAgY29uc3QgY29tcG9uZW50PXJlYWRGaWxlU3luYyhyZXNvbHZlKHByb2Nlc3MuY3dkKCksInNyYy9hc3Ryby90YWJsZXByZXNzIixmaWxlKSwidXRmOCIpOwogICAgY29uc3QgYnV0dG9uPShjb21wb25lbnQubWF0Y2goLzxidXR0b25cYltcc1xTXSo/Pi9nKXx8W10pLmZpbmQodGFnPT50YWcuaW5jbHVkZXMoc2VsZWN0b3IpKTsKICAgIGV4cGVjdChidXR0b24pLnRvQmVEZWZpbmVkKCk7CiAgICBleHBlY3QoYnV0dG9uKS50b0NvbnRhaW4oJ2RhdGEtZXNjLWJ1aWxkZXItcHJldmlldy1hY3Rpb249e0FzdHJvLmxvY2Fscy5lc2NCdWlsZGVyUHJldmlldyA/ICJ5ZXMiIDogdW5kZWZpbmVkfScpOwogICAgY29uc3QgbWFya3VwPWJ1dHRvbiEucmVwbGFjZSgvZGF0YS1lc2MtYnVpbGRlci1wcmV2aWV3LWFjdGlvbj1ce1tefV0rXH0vLCdkYXRhLWVzYy1idWlsZGVyLXByZXZpZXctYWN0aW9uJykKICAgICAgLnJlcGxhY2UoLzxidXR0b25cYi8sJzxidXR0b24gaWQ9InRhcmdldCInKSsiTmV4dDwvYnV0dG9uPiI7CiAgICBleHBlY3Qoc2FmZShtYXJrdXApKS50b0JlKHRydWUpOwogICAgZXhwZWN0KHNhZmUobWFya3VwLHRydWUpKS50b0JlKGZhbHNlKTsKICB9KTsK').decode('utf-8')
           if source.count(obsolete) != 1:
               raise SystemExit('Expected exactly one obsolete tablepress component test block')
           path.write_text(source.replace(obsolete,''),encoding='utf-8')
