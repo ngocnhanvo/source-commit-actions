@@ -294,6 +294,37 @@
           ]
         }
       }
+    },
+    "ngocnhanvo/web-security-skill": {
+      "allow_deletions": false,
+      "allow_workflows": false,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "docs"
+          ]
+        }
+      }
+    },
+    "ngocnhanvo/web-security-skill-actions": {
+      "allow_deletions": false,
+      "allow_workflows": true,
+      "branches": {
+        "main": {
+          "modes": [
+            "direct_commit",
+            "branch_pr"
+          ],
+          "validation_presets": [
+            "actions",
+            "docs"
+          ]
+        }
+      }
     }
   }
 }
